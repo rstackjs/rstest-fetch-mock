@@ -4,11 +4,10 @@ This file provides guidance to AI coding agents working in this repository.
 
 ## What this is
 
-`rstest-fetch-mock` is a `fetch` mock for [Rstest](https://rstest.rs). It is a
-**port of [vitest-fetch-mock](https://github.com/IanVS/vitest-fetch-mock)**,
-which is itself a fork of
-[jest-fetch-mock](https://github.com/jefflau/jest-fetch-mock). The porting
-lineage matters more than anything else in this repo — see "Port discipline".
+`rstest-fetch-mock` is a `fetch` mock for [Rstest](https://rstest.rs), ported
+from [vitest-fetch-mock](https://github.com/IanVS/vitest-fetch-mock) (a fork of
+[jest-fetch-mock](https://github.com/jefflau/jest-fetch-mock)). How `src/index.ts`
+couples to Rstest is self-evident from the source — read it directly.
 
 ## Commands
 
@@ -25,39 +24,12 @@ pnpm exec rstest run tests/node.test.ts
 CI (`.github/workflows/ci.yml`) runs, in order: install → lint → type-check →
 build → test. Keep all four green.
 
-## Port discipline (the core rule)
+## Tests — keep parity with upstream (the core rule)
 
-`src/index.ts` and the `tests/` are near-verbatim copies of the upstream
-`vitest-fetch-mock` source. **Preserve minimal diff from upstream** so changes
-can be re-synced. The entire rstest coupling is three edits in `src/index.ts`:
-
-| Upstream (`vitest-fetch-mock`)                     | Here (`rstest-fetch-mock`)                    |
-| -------------------------------------------------- | --------------------------------------------- |
-| `import { vi as vitest, type Mock } from 'vitest'` | `import { rs, type Mock } from '@rstest/core'` |
-| `isMocking = vitest.fn(always(true))`              | `isMocking = rs.fn(always(true))`             |
-| `createFetchMock(vi: typeof vitest)`               | `createFetchMock(vi: typeof rs = rs)`         |
-
-`rs` is Rstest's mocking utility (the analog of Vitest's `vi`); its
-`fn/mockImplementation/mockImplementationOnce/mockRestore/.mock.calls` surface
-matches what the library uses. The factory param defaults to `rs`, so users call
-`createFetchMock()` with no argument (better than upstream's required `vi`).
-
-One **intentional** local divergence beyond those three edits: the public
-methods and exported types in `src/index.ts` carry JSDoc that upstream does not.
-This is a deliberate agent-DX layer (the `.d.ts` is how agents read the API on
-hover) — keep it, and re-apply it after re-copying from upstream.
-
-When updating from upstream: re-copy the file, re-apply exactly those three
-transforms plus `vi.*` → `rs.*` in tests, then re-apply the JSDoc. Do **not**
-refactor for style — divergence is a re-sync cost. When you add, remove, or
-change a public method or its arguments, update **both** its JSDoc in
-`src/index.ts` **and** the API section of `README.md` so the two stay in sync.
-
-## Tests
-
-Ported from upstream, which ported jest-fetch-mock. `tests/api.test.ts` is the
+The `tests/` are ported from `vitest-fetch-mock`. `tests/api.test.ts` is the
 large behavioral-parity suite — **keep its `describe`/`it` names and assertions
-identical to upstream** so parity is auditable.
+identical to upstream** so parity stays auditable; don't rename or restructure
+them for style.
 
 - `tests/api.ts` — framework-agnostic request helper, copied verbatim.
 - `tests/node.test.ts` — runs under the Node environment via a
