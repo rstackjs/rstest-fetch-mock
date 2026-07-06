@@ -1,7 +1,7 @@
 {
   "name": "rstest-fetch-mock",
   "version": "0.1.0",
-  "description": "fetch mock for rstest",
+  "description": "the fetch mock for Rstest",
   "type": "module",
   "packageManager": "pnpm@10.34.1",
   "main": "./dist/index.js",
