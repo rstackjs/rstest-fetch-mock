@@ -24,24 +24,42 @@ class FetchMockObject {
   ) {}
 
   // enable/disable
+
+  /**
+   * Replace `globalThis.fetch` with the mock and expose the global `fetchMock`.
+   * Call once, typically from a setup file.
+   */
   enableMocks(): FetchMock {
     globalThis.fetch = this.mockedFetch;
     globalThis.fetchMock = this.chainingResultProvider();
     return this.chainingResultProvider();
   }
 
+  /** Restore the original `globalThis.fetch` captured when the mock was created. */
   disableMocks(): FetchMock {
     globalThis.fetch = this.originalFetch;
     return this.chainingResultProvider();
   }
 
   // reset
+
+  /**
+   * Reset the mock: clears queued `*Once` responses, any installed
+   * implementation, and recorded calls. Does **not** restore the native
+   * `fetch` — the mock stays installed; use {@link disableMocks} for that.
+   */
   resetMocks(): FetchMock {
     this.mockedFetch.mockRestore();
     return this.chainingResultProvider();
   }
 
   // mocking functions
+
+  /**
+   * Respond to **all** subsequent calls. `responseProvider` is a body string
+   * (or `null`/`undefined`), a `Response`, a `MockResponse`, or a function
+   * `(request) => ResponseLike | Promise<ResponseLike>`.
+   */
   mockResponse(responseProvider: ResponseProvider, params?: MockParams): FetchMock {
     this.mockedFetch.mockImplementation((input: RequestInput, requestInit?: RequestInit) => {
       if (!this.isMocking(input, requestInit)) {
@@ -55,6 +73,10 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /**
+   * Respond to only the **next** call; each call consumes one queued response.
+   * Chain multiple calls to queue several responses. Alias: {@link once}.
+   */
   mockResponseOnce(responseProvider: ResponseProvider, params?: MockParams): FetchMock {
     this.mockedFetch.mockImplementationOnce((input: RequestInput, requestInit?: RequestInit) => {
       if (!this.isMocking(input, requestInit)) {
@@ -66,6 +88,11 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /**
+   * Respond with `responseProvider` only when the request matches
+   * `urlOrPredicate`; non-matching requests fall through to the original
+   * `fetch`. Persistent (applies to all subsequent calls).
+   */
   mockResponseIf(urlOrPredicate: UrlOrPredicate, responseProvider: ResponseProvider, params?: MockParams): FetchMock {
     this.mockedFetch.mockImplementation((input: RequestInput, requestInit?: RequestInit) => {
       if (!this.isMocking(input, requestInit)) {
@@ -79,6 +106,7 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /** Like {@link mockResponseIf}, but applies to the next call only. */
   mockResponseOnceIf(
     urlOrPredicate: UrlOrPredicate,
     responseProvider: ResponseProvider,
@@ -99,6 +127,10 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /**
+   * Queue several one-time responses, consumed in order. Each item is a body
+   * string, a `[body, params]` tuple, or a `ResponseProvider` function.
+   */
   mockResponses(...responses: Array<ResponseBody | [ResponseBody, MockParams?] | ResponseProvider>): FetchMock {
     responses.forEach((response) => {
       if (Array.isArray(response)) {
@@ -124,17 +156,26 @@ class FetchMockObject {
   }
 
   // abort
+
+  /** Reject **all** subsequent calls with an `AbortError` (`DOMException`). */
   mockAbort(): FetchMock {
     this.mockedFetch.mockImplementation(() => abortAsync());
     return this.chainingResultProvider();
   }
 
+  /** Reject only the next call with an `AbortError` (`DOMException`). */
   mockAbortOnce(): FetchMock {
     this.mockedFetch.mockImplementationOnce(() => abortAsync());
     return this.chainingResultProvider();
   }
 
   // reject (error)
+
+  /**
+   * Reject **all** subsequent calls. Pass an `Error` to reject with it, a body
+   * string to reject with that value, or a function to build the rejection per
+   * request.
+   */
   mockReject(error?: ErrorOrFunction): FetchMock {
     this.mockedFetch.mockImplementation((input: RequestInput, requestInit?: RequestInit) =>
       normalizeError(normalizeRequest(input, requestInit), error)
@@ -142,6 +183,7 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /** Like {@link mockReject}, but rejects only the next call. */
   mockRejectOnce(error?: ErrorOrFunction): FetchMock {
     this.mockedFetch.mockImplementationOnce((input: RequestInput, requestInit?: RequestInit) =>
       normalizeError(normalizeRequest(input, requestInit), error)
@@ -150,6 +192,12 @@ class FetchMockObject {
   }
 
   // enable/disable
+
+  /**
+   * Turn interception on for **all** subsequent calls, optionally installing
+   * `mockResponse(responseProvider, params)` at the same time. Counterpart of
+   * {@link dontMock}.
+   */
   doMock(responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
     this.isMocking.mockImplementation(always(true));
     if (responseProvider) {
@@ -158,6 +206,7 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /** Like {@link doMock}, but only for the next call. Alias: {@link mockOnce}. */
   doMockOnce(responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
     this.isMocking.mockImplementationOnce(always(true));
     if (responseProvider) {
@@ -166,6 +215,10 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /**
+   * Intercept only requests that match `urlOrPredicate`; others hit the real
+   * `fetch`. Persistent. Alias: {@link mockIf}.
+   */
   doMockIf(urlOrPredicate: UrlOrPredicate, responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
     this.isMocking.mockImplementation((input, requestInit) =>
       requestMatches(normalizeRequest(input, requestInit), urlOrPredicate)
@@ -176,6 +229,7 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /** Like {@link doMockIf}, but only for the next call. Alias: {@link mockOnceIf}. */
   doMockOnceIf(urlOrPredicate: UrlOrPredicate, responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
     this.isMocking.mockImplementationOnce((input, requestInit) =>
       requestMatches(normalizeRequest(input, requestInit), urlOrPredicate)
@@ -186,16 +240,19 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /** Pass **all** subsequent calls through to the real `fetch`. */
   dontMock(): FetchMock {
     this.isMocking.mockImplementation(always(false));
     return this.chainingResultProvider();
   }
 
+  /** Pass only the next call through to the real `fetch`. */
   dontMockOnce(): FetchMock {
     this.isMocking.mockImplementationOnce(always(false));
     return this.chainingResultProvider();
   }
 
+  /** Pass matching requests through to the real `fetch`; mock the rest. */
   dontMockIf(urlOrPredicate: UrlOrPredicate): FetchMock {
     this.isMocking.mockImplementation((input, requestInit) =>
       requestNotMatches(normalizeRequest(input, requestInit), urlOrPredicate)
@@ -203,6 +260,7 @@ class FetchMockObject {
     return this.chainingResultProvider();
   }
 
+  /** Like {@link dontMockIf}, but only for the next call. */
   dontMockOnceIf(urlOrPredicate: UrlOrPredicate): FetchMock {
     this.isMocking.mockImplementationOnce((input, requestInit) =>
       requestNotMatches(normalizeRequest(input, requestInit), urlOrPredicate)
@@ -211,6 +269,11 @@ class FetchMockObject {
   }
 
   // recording
+
+  /**
+   * The normalized `Request` for every intercepted call. Complements the raw
+   * `.mock.calls` recorded on the mock function itself.
+   */
   requests(): Request[] {
     return this.mockedFetch.mock.calls
       .map(([input, requestInit]) => {
@@ -254,27 +317,42 @@ class FetchMockObject {
   }
 }
 
+/** Matcher for the conditional (`*If`) methods: an exact URL string, a `RegExp`
+ * tested against the request URL, or a predicate over the `Request`. */
 export type UrlOrPredicate = string | RegExp | ((input: Request) => boolean);
 export type RequestInput = string | URL | Request;
+/** A response value, or a function that derives one from the `Request`. A bare
+ * string (or `null`/`undefined`) is used as the response body. */
 export type ResponseProvider = ResponseLike | ((request: Request) => ResponseLike | Promise<ResponseLike>);
 export type ResponseLike = MockResponse | ResponseBody | Response;
 export type ResponseBody = string | null | undefined;
 export type ErrorOrFunction = Error | ResponseBody | ResponseProvider;
 
+/** Init for a mocked `Response`. Mirrors `ResponseInit` plus a couple of extras. */
 export interface MockParams {
   status?: number;
   statusText?: string;
+  /** `HeadersInit`: either `[name, value]` tuples or a plain record. */
   headers?: [string, string][] | Record<string, string>; // HeadersInit
+  /** Overrides `response.url` (which is otherwise empty for constructed responses). */
   url?: string;
   /** Set >= 1 to have redirected return true. Only applicable to Node.js */
   counter?: number;
 }
 
+/** A {@link MockParams} that also carries the response `body`. */
 export interface MockResponse extends MockParams {
   body?: string;
 }
 
 // factory
+
+/**
+ * Create a fetch mocker. `vi` defaults to Rstest's `rs`, so no argument is
+ * needed; pass a mocking API explicitly only if you have a custom one. Call
+ * {@link FetchMockObject.enableMocks | enableMocks()} on the result to install
+ * it as `globalThis.fetch`.
+ */
 export default function createFetchMock(vi: typeof rs = rs): FetchMock {
   const isMocking = vi.fn(always(true));
 

@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents working in this repository.
 
 ## What this is
 
@@ -42,9 +42,16 @@ can be re-synced. The entire rstest coupling is three edits in `src/index.ts`:
 matches what the library uses. The factory param defaults to `rs`, so users call
 `createFetchMock()` with no argument (better than upstream's required `vi`).
 
-When updating from upstream: re-copy the file, then re-apply exactly those three
-transforms plus `vi.*` → `rs.*` in tests. Do **not** refactor for style —
-divergence is a re-sync cost.
+One **intentional** local divergence beyond those three edits: the public
+methods and exported types in `src/index.ts` carry JSDoc that upstream does not.
+This is a deliberate agent-DX layer (the `.d.ts` is how agents read the API on
+hover) — keep it, and re-apply it after re-copying from upstream.
+
+When updating from upstream: re-copy the file, re-apply exactly those three
+transforms plus `vi.*` → `rs.*` in tests, then re-apply the JSDoc. Do **not**
+refactor for style — divergence is a re-sync cost. When you add, remove, or
+change a public method or its arguments, update **both** its JSDoc in
+`src/index.ts` **and** the API section of `README.md` so the two stay in sync.
 
 ## Tests
 
