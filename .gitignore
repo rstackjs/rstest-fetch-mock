@@ -141,3 +141,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Stray TS declaration output from tests (noEmit is on; these are editor/ad-hoc tsc artifacts)
+tests/*.d.ts
