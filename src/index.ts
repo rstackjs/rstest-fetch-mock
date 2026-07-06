@@ -56,6 +56,10 @@ class FetchMockObject {
    */
   resetMocks(): FetchMock {
     this.mockedFetch.mockRestore();
+    // The shared predicate is stateful too (do*/dont* toggles, unconsumed
+    // *Once gates), so reset it back to the default "always mock" — otherwise a
+    // stale predicate bleeds into the next test through the restored default.
+    this.isMocking.mockRestore();
     return this.chainingResultProvider();
   }
 
