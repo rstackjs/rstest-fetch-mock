@@ -338,6 +338,16 @@ export default function createFetchMock(mocker: typeof rs = rs): FetchMock {
 
   copyMethods(fetchMockObject, fetchMock);
 
+  // `isMocking` is an instance field, so `copyMethods` (which only copies
+  // prototype methods) can't expose it. Attach it explicitly so the public
+  // `fetchMock.isMocking(...)` promised by the type is callable at runtime.
+  Object.defineProperty(fetchMock, 'isMocking', {
+    value: isMocking,
+    writable: false,
+    enumerable: true,
+    configurable: true,
+  });
+
   return mockedFetch;
 }
 
