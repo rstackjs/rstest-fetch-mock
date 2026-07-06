@@ -1,7 +1,7 @@
 {
   "name": "rstest-fetch-mock",
   "version": "0.1.0",
-  "description": "Fetch mock for Rstest, ported from vitest-fetch-mock / jest-fetch-mock",
+  "description": "fetch mock for rstest",
   "type": "module",
   "packageManager": "pnpm@10.34.1",
   "main": "./dist/index.js",
