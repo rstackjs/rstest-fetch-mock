@@ -309,7 +309,11 @@ export interface MockParams {
   headers?: [string, string][] | Record<string, string>; // HeadersInit
   /** Overrides `response.url` (which is otherwise empty for constructed responses). */
   url?: string;
-  /** Set >= 1 to have redirected return true. Only applicable to Node.js */
+  /**
+   * Accepted for `vitest-fetch-mock` compatibility. Only affects
+   * `response.redirected` when the runtime's `Response` honors it (e.g. a
+   * `node-fetch` polyfill); it has no effect with the global WHATWG `Response`.
+   */
   counter?: number;
 }
 

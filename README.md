@@ -100,12 +100,12 @@ project-wide reset/restore also touch it:
 | Trigger                                            | Effect on the fetch mock                                                              |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `rs.clearAllMocks()` / config `clearMocks: true`   | Clears recorded calls only. Queued responses **survive**; `fetch` stays mocked.       |
-| `rs.resetAllMocks()` / config `mockReset: true`    | **Wipes queued responses** and installed implementations; `fetch` stays mocked.       |
+| `rs.resetAllMocks()` / config `resetMocks: true`   | **Wipes queued responses** and installed implementations; `fetch` stays mocked.       |
 | `rs.restoreAllMocks()` / config `restoreMocks: true` | Wipes queued responses; `fetch` **stays mocked** (it is _not_ restored to native).  |
 
 Two consequences worth remembering:
 
-- If you enable `mockReset` / `restoreMocks` globally, per-test
+- If you enable `resetMocks` / `restoreMocks` globally, per-test
   `mockResponse*` setups are cleared between tests — set them up inside each
   test (or in `beforeEach`), not once at the top.
 - Neither `resetMocks()` nor `rs.restoreAllMocks()` restores the native
@@ -122,13 +122,12 @@ setup takes no argument.
 ### Shared types
 
 ```ts
-// What a mocked call responds with. A plain string is the response body.
+// A single mocked response value. A plain string is the response body.
+type ResponseLike = string | null | undefined | Response | MockResponse;
+
+// What a mocked call responds with: a value, or a function deriving one.
 type ResponseProvider =
-  | string
-  | null
-  | undefined
-  | Response
-  | MockResponse
+  | ResponseLike
   | ((request: Request) => ResponseLike | Promise<ResponseLike>);
 
 interface MockParams {
@@ -177,7 +176,8 @@ type UrlOrPredicate = string | RegExp | ((input: Request) => boolean);
 ### Rejecting / aborting
 
 - **`mockReject(errorOrFunction?)`** — reject _all_ subsequent calls. Pass an
-  `Error` to reject with it, or a function to build the rejection per request.
+  `Error` to reject with it, a body string to reject with that value, or a
+  function to build the rejection per request.
 - **`mockRejectOnce(errorOrFunction?)`** — reject only the next call.
 - **`mockAbort()`** — reject _all_ subsequent calls with an `AbortError`
   (`DOMException`).
@@ -206,6 +206,8 @@ so some requests hit the real network:
 
 - **`requests()`** — returns the `Request[]` for every intercepted call (inputs
   normalized to `Request`).
+- **`isMocking(input, init?)`** — whether the given request _would_ be mocked.
+  Not a read-only check: it consumes any pending `*Once` gate.
 - **`.mock.calls`**, **`.mock.results`**, etc. — because `fetchMock` _is_ a mock
   function, all standard Rstest mock introspection is available.
 
