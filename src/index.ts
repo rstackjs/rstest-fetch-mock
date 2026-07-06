@@ -14,12 +14,17 @@ declare global {
 
 export type FetchMock = Mock<typeof global.fetch> & FetchMockObject;
 
-class FetchMockObject {
-  public readonly isMocking = rs.fn(always(true));
+/** The mutable predicate that gates whether a given request is intercepted. */
+type MockPredicate = Mock<(input: RequestInput, requestInit?: RequestInit) => boolean>;
 
+class FetchMockObject {
   constructor(
     private mockedFetch: Mock<typeof global.fetch>,
     private originalFetch: typeof global.fetch,
+    // Owned by the factory and shared with the mocked-fetch default
+    // implementation, so `do*/dont*` toggles and the pristine default agree on
+    // one predicate instead of diverging across two instances.
+    public readonly isMocking: MockPredicate,
     private chainingResultProvider: () => FetchMock
   ) {}
 
@@ -31,8 +36,9 @@ class FetchMockObject {
    */
   enableMocks(): FetchMock {
     globalThis.fetch = this.mockedFetch;
-    globalThis.fetchMock = this.chainingResultProvider();
-    return this.chainingResultProvider();
+    const fetchMock = this.chainingResultProvider();
+    globalThis.fetchMock = fetchMock;
+    return fetchMock;
   }
 
   /** Restore the original `globalThis.fetch` captured when the mock was created. */
@@ -61,15 +67,7 @@ class FetchMockObject {
    * `(request) => ResponseLike | Promise<ResponseLike>`.
    */
   mockResponse(responseProvider: ResponseProvider, params?: MockParams): FetchMock {
-    this.mockedFetch.mockImplementation((input: RequestInput, requestInit?: RequestInit) => {
-      if (!this.isMocking(input, requestInit)) {
-        return this.originalFetch(input, requestInit);
-      }
-
-      const request = normalizeRequest(input, requestInit);
-      return buildResponse(request, responseProvider, params);
-    });
-
+    this.mockedFetch.mockImplementation(makeResponder(this.isMocking, this.originalFetch, responseProvider, params));
     return this.chainingResultProvider();
   }
 
@@ -78,13 +76,7 @@ class FetchMockObject {
    * Chain multiple calls to queue several responses. Alias: {@link once}.
    */
   mockResponseOnce(responseProvider: ResponseProvider, params?: MockParams): FetchMock {
-    this.mockedFetch.mockImplementationOnce((input: RequestInput, requestInit?: RequestInit) => {
-      if (!this.isMocking(input, requestInit)) {
-        return this.originalFetch(input, requestInit);
-      }
-      const request = normalizeRequest(input, requestInit);
-      return buildResponse(request, responseProvider, params);
-    });
+    this.mockedFetch.mockImplementationOnce(makeResponder(this.isMocking, this.originalFetch, responseProvider, params));
     return this.chainingResultProvider();
   }
 
@@ -94,15 +86,9 @@ class FetchMockObject {
    * `fetch`. Persistent (applies to all subsequent calls).
    */
   mockResponseIf(urlOrPredicate: UrlOrPredicate, responseProvider: ResponseProvider, params?: MockParams): FetchMock {
-    this.mockedFetch.mockImplementation((input: RequestInput, requestInit?: RequestInit) => {
-      if (!this.isMocking(input, requestInit)) {
-        return this.originalFetch(input, requestInit);
-      }
-      const request = normalizeRequest(input, requestInit);
-      return requestMatches(request, urlOrPredicate)
-        ? buildResponse(request, responseProvider, params)
-        : this.originalFetch(input, requestInit);
-    });
+    this.mockedFetch.mockImplementation(
+      makeConditionalResponder(this.isMocking, this.originalFetch, urlOrPredicate, responseProvider, params)
+    );
     return this.chainingResultProvider();
   }
 
@@ -115,15 +101,9 @@ class FetchMockObject {
     this.isMocking.mockImplementationOnce((input, requestInit) =>
       requestMatches(normalizeRequest(input, requestInit), urlOrPredicate)
     );
-    this.mockedFetch.mockImplementationOnce((input: RequestInput, requestInit?: RequestInit) => {
-      if (!this.isMocking(input, requestInit)) {
-        return this.originalFetch(input, requestInit);
-      }
-      const request = normalizeRequest(input, requestInit);
-      return requestMatches(request, urlOrPredicate)
-        ? buildResponse(request, responseProvider, params)
-        : this.originalFetch(input, requestInit);
-    });
+    this.mockedFetch.mockImplementationOnce(
+      makeConditionalResponder(this.isMocking, this.originalFetch, urlOrPredicate, responseProvider, params)
+    );
     return this.chainingResultProvider();
   }
 
@@ -133,24 +113,13 @@ class FetchMockObject {
    */
   mockResponses(...responses: Array<ResponseBody | [ResponseBody, MockParams?] | ResponseProvider>): FetchMock {
     responses.forEach((response) => {
-      if (Array.isArray(response)) {
-        const [body, init] = response;
-        this.mockedFetch.mockImplementationOnce((input) => {
-          if (!this.isMocking(input)) {
-            return this.originalFetch(input);
-          }
-          const request = normalizeRequest(input);
-          return buildResponse(request, body, init);
-        });
-      } else {
-        this.mockedFetch.mockImplementationOnce((input) => {
-          if (!this.isMocking(input)) {
-            return this.originalFetch(input);
-          }
-          const request = normalizeRequest(input);
-          return buildResponse(request, response);
-        });
-      }
+      const [body, init] = Array.isArray(response) ? response : [response, undefined];
+      this.mockedFetch.mockImplementationOnce((input) => {
+        if (!this.isMocking(input)) {
+          return this.originalFetch(input);
+        }
+        return buildResponse(normalizeRequest(input), body, init);
+      });
     });
     return this.chainingResultProvider();
   }
@@ -348,16 +317,16 @@ export interface MockResponse extends MockParams {
 // factory
 
 /**
- * Create a fetch mocker. `vi` defaults to Rstest's `rs`, so no argument is
- * needed; pass a mocking API explicitly only if you have a custom one. Call
- * {@link FetchMockObject.enableMocks | enableMocks()} on the result to install
- * it as `globalThis.fetch`.
+ * Create a fetch mocker. `mocker` defaults to Rstest's `rs`, so no argument is
+ * needed; pass a compatible mocking API explicitly only if you have a custom
+ * one. Call {@link FetchMockObject.enableMocks | enableMocks()} on the result
+ * to install it as `globalThis.fetch`.
  */
-export default function createFetchMock(vi: typeof rs = rs): FetchMock {
-  const isMocking = vi.fn(always(true));
+export default function createFetchMock(mocker: typeof rs = rs): FetchMock {
+  const isMocking = mocker.fn(always(true));
 
   const originalFetch = globalThis.fetch;
-  const mockedFetch = vi.fn((input, requestInit) => {
+  const mockedFetch = mocker.fn((input, requestInit) => {
     if (!isMocking(input, requestInit)) {
       return originalFetch(input, requestInit);
     }
@@ -365,11 +334,47 @@ export default function createFetchMock(vi: typeof rs = rs): FetchMock {
   }) as FetchMock;
 
   const fetchMock: FetchMock = mockedFetch as FetchMock;
-  const fetchMockObject = new FetchMockObject(mockedFetch, originalFetch, () => fetchMock);
+  const fetchMockObject = new FetchMockObject(mockedFetch, originalFetch, isMocking, () => fetchMock);
 
   copyMethods(fetchMockObject, fetchMock);
 
   return mockedFetch;
+}
+
+// Build the `mockedFetch` implementation for the unconditional mock* methods:
+// gate on `isMocking`, otherwise fall through to the real fetch.
+function makeResponder(
+  isMocking: MockPredicate,
+  originalFetch: typeof global.fetch,
+  responseProvider: ResponseProvider,
+  params?: MockParams
+) {
+  return (input: RequestInput, requestInit?: RequestInit) => {
+    if (!isMocking(input, requestInit)) {
+      return originalFetch(input, requestInit);
+    }
+    return buildResponse(normalizeRequest(input, requestInit), responseProvider, params);
+  };
+}
+
+// Same as `makeResponder`, but only responds when the request matches
+// `urlOrPredicate`; non-matching requests fall through to the real fetch.
+function makeConditionalResponder(
+  isMocking: MockPredicate,
+  originalFetch: typeof global.fetch,
+  urlOrPredicate: UrlOrPredicate,
+  responseProvider: ResponseProvider,
+  params?: MockParams
+) {
+  return (input: RequestInput, requestInit?: RequestInit) => {
+    if (!isMocking(input, requestInit)) {
+      return originalFetch(input, requestInit);
+    }
+    const request = normalizeRequest(input, requestInit);
+    return requestMatches(request, urlOrPredicate)
+      ? buildResponse(request, responseProvider, params)
+      : originalFetch(input, requestInit);
+  };
 }
 
 function requestMatches(request: Request, urlOrPredicate: UrlOrPredicate): boolean {
