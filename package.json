@@ -1,0 +1,43 @@
+{
+  "name": "rstest-fetch-mock",
+  "version": "0.1.0",
+  "description": "Fetch mock for Rstest, ported from vitest-fetch-mock / jest-fetch-mock",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rslib build",
+    "lint": "rslint",
+    "type-check": "rslint --type-check",
+    "test": "rstest run"
+  },
+  "keywords": [
+    "rstest",
+    "fetch",
+    "mock",
+    "test",
+    "testing"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@rslib/core": "^0.23.1",
+    "@rslint/core": "^0.6.4",
+    "@rstest/core": "^0.10.6",
+    "@types/node": "^22.0.0",
+    "jsdom": "^26.0.0",
+    "typescript": "~5.7.0"
+  },
+  "peerDependencies": {
+    "@rstest/core": ">=0.10.0"
+  }
+}

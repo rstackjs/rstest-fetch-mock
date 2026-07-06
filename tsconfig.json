@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["es2022", "dom"],
+    "baseUrl": "./",
+    "paths": {
+      "rstest-fetch-mock": ["./src/index.ts"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "sourceMap": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["./src/**/*.ts", "./tests/**/*.ts", "./types/**/*.ts"]
+}
