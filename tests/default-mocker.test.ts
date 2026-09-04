@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from '@rstest/core';
+import { afterAll, beforeAll, describe, expect, it } from 'rstack/test';
 import createFetchMock from '../src/index.js';
 
 // Rstest-specific: createFetchMock defaults its argument to `rs`, so it can be

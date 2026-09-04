@@ -1,4 +1,4 @@
-import { describe, expect, it, rs } from '@rstest/core';
+import { describe, expect, it, rs } from 'rstack/test';
 import createFetchMock from '../src/index.js';
 
 // Regression guard: `fetchMock.isMocking` is a public member of the type (and
@@ -34,11 +34,15 @@ describe('fetchMock.isMocking (public predicate)', () => {
 
     fetch.dontMock();
     fetch.resetMocks();
-    expect(await globalThis.fetch('http://example.com').then((r) => r.text())).toBe('');
+    expect(
+      await globalThis.fetch('http://example.com').then((r) => r.text()),
+    ).toBe('');
 
     fetch.dontMockOnce();
     fetch.resetMocks();
-    expect(await globalThis.fetch('http://example.com').then((r) => r.text())).toBe('');
+    expect(
+      await globalThis.fetch('http://example.com').then((r) => r.text()),
+    ).toBe('');
 
     fetch.disableMocks();
     globalThis.fetch = original;

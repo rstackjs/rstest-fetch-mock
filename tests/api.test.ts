@@ -1,4 +1,4 @@
-import { describe, beforeEach, it, test, expect, rs, afterEach, beforeAll, afterAll } from '@rstest/core';
+import { describe, beforeEach, it, test, expect, rs, afterEach, beforeAll, afterAll } from 'rstack/test';
 import { APIRequest, APIRequest2, defaultRequestUri, request } from './api.js';
 import createFetchMock, { type FetchMock, type MockResponse } from '../src/index.js';
 

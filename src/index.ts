@@ -15,7 +15,9 @@ declare global {
 export type FetchMock = Mock<typeof global.fetch> & FetchMockObject;
 
 /** The mutable predicate that gates whether a given request is intercepted. */
-type MockPredicate = Mock<(input: RequestInput, requestInit?: RequestInit) => boolean>;
+type MockPredicate = Mock<
+  (input: RequestInput, requestInit?: RequestInit) => boolean
+>;
 
 class FetchMockObject {
   constructor(
@@ -25,7 +27,7 @@ class FetchMockObject {
     // implementation, so `do*/dont*` toggles and the pristine default agree on
     // one predicate instead of diverging across two instances.
     public readonly isMocking: MockPredicate,
-    private chainingResultProvider: () => FetchMock
+    private chainingResultProvider: () => FetchMock,
   ) {}
 
   // enable/disable
@@ -70,8 +72,18 @@ class FetchMockObject {
    * (or `null`/`undefined`), a `Response`, a `MockResponse`, or a function
    * `(request) => ResponseLike | Promise<ResponseLike>`.
    */
-  mockResponse(responseProvider: ResponseProvider, params?: MockParams): FetchMock {
-    this.mockedFetch.mockImplementation(makeResponder(this.isMocking, this.originalFetch, responseProvider, params));
+  mockResponse(
+    responseProvider: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
+    this.mockedFetch.mockImplementation(
+      makeResponder(
+        this.isMocking,
+        this.originalFetch,
+        responseProvider,
+        params,
+      ),
+    );
     return this.chainingResultProvider();
   }
 
@@ -79,8 +91,18 @@ class FetchMockObject {
    * Respond to only the **next** call; each call consumes one queued response.
    * Chain multiple calls to queue several responses. Alias: {@link once}.
    */
-  mockResponseOnce(responseProvider: ResponseProvider, params?: MockParams): FetchMock {
-    this.mockedFetch.mockImplementationOnce(makeResponder(this.isMocking, this.originalFetch, responseProvider, params));
+  mockResponseOnce(
+    responseProvider: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
+    this.mockedFetch.mockImplementationOnce(
+      makeResponder(
+        this.isMocking,
+        this.originalFetch,
+        responseProvider,
+        params,
+      ),
+    );
     return this.chainingResultProvider();
   }
 
@@ -89,9 +111,19 @@ class FetchMockObject {
    * `urlOrPredicate`; non-matching requests fall through to the original
    * `fetch`. Persistent (applies to all subsequent calls).
    */
-  mockResponseIf(urlOrPredicate: UrlOrPredicate, responseProvider: ResponseProvider, params?: MockParams): FetchMock {
+  mockResponseIf(
+    urlOrPredicate: UrlOrPredicate,
+    responseProvider: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     this.mockedFetch.mockImplementation(
-      makeConditionalResponder(this.isMocking, this.originalFetch, urlOrPredicate, responseProvider, params)
+      makeConditionalResponder(
+        this.isMocking,
+        this.originalFetch,
+        urlOrPredicate,
+        responseProvider,
+        params,
+      ),
     );
     return this.chainingResultProvider();
   }
@@ -100,13 +132,19 @@ class FetchMockObject {
   mockResponseOnceIf(
     urlOrPredicate: UrlOrPredicate,
     responseProvider: ResponseProvider,
-    params?: MockParams
+    params?: MockParams,
   ): FetchMock {
     this.isMocking.mockImplementationOnce((input, requestInit) =>
-      requestMatches(normalizeRequest(input, requestInit), urlOrPredicate)
+      requestMatches(normalizeRequest(input, requestInit), urlOrPredicate),
     );
     this.mockedFetch.mockImplementationOnce(
-      makeConditionalResponder(this.isMocking, this.originalFetch, urlOrPredicate, responseProvider, params)
+      makeConditionalResponder(
+        this.isMocking,
+        this.originalFetch,
+        urlOrPredicate,
+        responseProvider,
+        params,
+      ),
     );
     return this.chainingResultProvider();
   }
@@ -115,9 +153,15 @@ class FetchMockObject {
    * Queue several one-time responses, consumed in order. Each item is a body
    * string, a `[body, params]` tuple, or a `ResponseProvider` function.
    */
-  mockResponses(...responses: Array<ResponseBody | [ResponseBody, MockParams?] | ResponseProvider>): FetchMock {
+  mockResponses(
+    ...responses: Array<
+      ResponseBody | [ResponseBody, MockParams?] | ResponseProvider
+    >
+  ): FetchMock {
     responses.forEach((response) => {
-      const [body, init] = Array.isArray(response) ? response : [response, undefined];
+      const [body, init] = Array.isArray(response)
+        ? response
+        : [response, undefined];
       this.mockedFetch.mockImplementationOnce((input) => {
         if (!this.isMocking(input)) {
           return this.originalFetch(input);
@@ -150,16 +194,18 @@ class FetchMockObject {
    * request.
    */
   mockReject(error?: ErrorOrFunction): FetchMock {
-    this.mockedFetch.mockImplementation((input: RequestInput, requestInit?: RequestInit) =>
-      normalizeError(normalizeRequest(input, requestInit), error)
+    this.mockedFetch.mockImplementation(
+      (input: RequestInput, requestInit?: RequestInit) =>
+        normalizeError(normalizeRequest(input, requestInit), error),
     );
     return this.chainingResultProvider();
   }
 
   /** Like {@link mockReject}, but rejects only the next call. */
   mockRejectOnce(error?: ErrorOrFunction): FetchMock {
-    this.mockedFetch.mockImplementationOnce((input: RequestInput, requestInit?: RequestInit) =>
-      normalizeError(normalizeRequest(input, requestInit), error)
+    this.mockedFetch.mockImplementationOnce(
+      (input: RequestInput, requestInit?: RequestInit) =>
+        normalizeError(normalizeRequest(input, requestInit), error),
     );
     return this.chainingResultProvider();
   }
@@ -180,7 +226,10 @@ class FetchMockObject {
   }
 
   /** Like {@link doMock}, but only for the next call. Alias: {@link mockOnce}. */
-  doMockOnce(responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
+  doMockOnce(
+    responseProvider?: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     this.isMocking.mockImplementationOnce(always(true));
     if (responseProvider) {
       this.mockResponseOnce(responseProvider, params);
@@ -192,9 +241,13 @@ class FetchMockObject {
    * Intercept only requests that match `urlOrPredicate`; others hit the real
    * `fetch`. Persistent. Alias: {@link mockIf}.
    */
-  doMockIf(urlOrPredicate: UrlOrPredicate, responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
+  doMockIf(
+    urlOrPredicate: UrlOrPredicate,
+    responseProvider?: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     this.isMocking.mockImplementation((input, requestInit) =>
-      requestMatches(normalizeRequest(input, requestInit), urlOrPredicate)
+      requestMatches(normalizeRequest(input, requestInit), urlOrPredicate),
     );
     if (responseProvider) {
       this.mockResponse(responseProvider, params);
@@ -203,9 +256,13 @@ class FetchMockObject {
   }
 
   /** Like {@link doMockIf}, but only for the next call. Alias: {@link mockOnceIf}. */
-  doMockOnceIf(urlOrPredicate: UrlOrPredicate, responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
+  doMockOnceIf(
+    urlOrPredicate: UrlOrPredicate,
+    responseProvider?: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     this.isMocking.mockImplementationOnce((input, requestInit) =>
-      requestMatches(normalizeRequest(input, requestInit), urlOrPredicate)
+      requestMatches(normalizeRequest(input, requestInit), urlOrPredicate),
     );
     if (responseProvider) {
       this.mockResponseOnce(responseProvider, params);
@@ -228,7 +285,7 @@ class FetchMockObject {
   /** Pass matching requests through to the real `fetch`; mock the rest. */
   dontMockIf(urlOrPredicate: UrlOrPredicate): FetchMock {
     this.isMocking.mockImplementation((input, requestInit) =>
-      requestNotMatches(normalizeRequest(input, requestInit), urlOrPredicate)
+      requestNotMatches(normalizeRequest(input, requestInit), urlOrPredicate),
     );
     return this.chainingResultProvider();
   }
@@ -236,7 +293,7 @@ class FetchMockObject {
   /** Like {@link dontMockIf}, but only for the next call. */
   dontMockOnceIf(urlOrPredicate: UrlOrPredicate): FetchMock {
     this.isMocking.mockImplementationOnce((input, requestInit) =>
-      requestNotMatches(normalizeRequest(input, requestInit), urlOrPredicate)
+      requestNotMatches(normalizeRequest(input, requestInit), urlOrPredicate),
     );
     return this.chainingResultProvider();
   }
@@ -271,21 +328,32 @@ class FetchMockObject {
   /**
    * alias for doMockOnce
    */
-  mockOnce(responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
+  mockOnce(
+    responseProvider?: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     return this.doMockOnce(responseProvider, params);
   }
 
   /**
    * alias for doMockIf
    */
-  mockIf(urlOrPredicate: UrlOrPredicate, responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
+  mockIf(
+    urlOrPredicate: UrlOrPredicate,
+    responseProvider?: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     return this.doMockIf(urlOrPredicate, responseProvider, params);
   }
 
   /**
    * alias for doMockOnceIf
    */
-  mockOnceIf(urlOrPredicate: UrlOrPredicate, responseProvider?: ResponseProvider, params?: MockParams): FetchMock {
+  mockOnceIf(
+    urlOrPredicate: UrlOrPredicate,
+    responseProvider?: ResponseProvider,
+    params?: MockParams,
+  ): FetchMock {
     return this.doMockOnceIf(urlOrPredicate, responseProvider, params);
   }
 }
@@ -296,7 +364,8 @@ export type UrlOrPredicate = string | RegExp | ((input: Request) => boolean);
 export type RequestInput = string | URL | Request;
 /** A response value, or a function that derives one from the `Request`. A bare
  * string (or `null`/`undefined`) is used as the response body. */
-export type ResponseProvider = ResponseLike | ((request: Request) => ResponseLike | Promise<ResponseLike>);
+export type ResponseProvider =
+  ResponseLike | ((request: Request) => ResponseLike | Promise<ResponseLike>);
 export type ResponseLike = MockResponse | ResponseBody | Response;
 export type ResponseBody = string | null | undefined;
 export type ErrorOrFunction = Error | ResponseBody | ResponseProvider;
@@ -342,7 +411,12 @@ export default function createFetchMock(mocker: typeof rs = rs): FetchMock {
   }) as FetchMock;
 
   const fetchMock: FetchMock = mockedFetch as FetchMock;
-  const fetchMockObject = new FetchMockObject(mockedFetch, originalFetch, isMocking, () => fetchMock);
+  const fetchMockObject = new FetchMockObject(
+    mockedFetch,
+    originalFetch,
+    isMocking,
+    () => fetchMock,
+  );
 
   copyMethods(fetchMockObject, fetchMock);
 
@@ -365,13 +439,17 @@ function makeResponder(
   isMocking: MockPredicate,
   originalFetch: typeof global.fetch,
   responseProvider: ResponseProvider,
-  params?: MockParams
+  params?: MockParams,
 ) {
   return (input: RequestInput, requestInit?: RequestInit) => {
     if (!isMocking(input, requestInit)) {
       return originalFetch(input, requestInit);
     }
-    return buildResponse(normalizeRequest(input, requestInit), responseProvider, params);
+    return buildResponse(
+      normalizeRequest(input, requestInit),
+      responseProvider,
+      params,
+    );
   };
 }
 
@@ -382,7 +460,7 @@ function makeConditionalResponder(
   originalFetch: typeof global.fetch,
   urlOrPredicate: UrlOrPredicate,
   responseProvider: ResponseProvider,
-  params?: MockParams
+  params?: MockParams,
 ) {
   return (input: RequestInput, requestInit?: RequestInit) => {
     if (!isMocking(input, requestInit)) {
@@ -395,7 +473,10 @@ function makeConditionalResponder(
   };
 }
 
-function requestMatches(request: Request, urlOrPredicate: UrlOrPredicate): boolean {
+function requestMatches(
+  request: Request,
+  urlOrPredicate: UrlOrPredicate,
+): boolean {
   if (urlOrPredicate instanceof RegExp) {
     return urlOrPredicate.test(request.url);
   } else if (typeof urlOrPredicate === 'string') {
@@ -405,7 +486,10 @@ function requestMatches(request: Request, urlOrPredicate: UrlOrPredicate): boole
   }
 }
 
-function requestNotMatches(request: Request, urlOrPredicate: UrlOrPredicate): boolean {
+function requestNotMatches(
+  request: Request,
+  urlOrPredicate: UrlOrPredicate,
+): boolean {
   return !requestMatches(request, urlOrPredicate);
 }
 
@@ -436,7 +520,10 @@ function resolveInput(input: string): string {
   return input;
 }
 
-function normalizeRequest(input: RequestInput, requestInit?: RequestInit): Request {
+function normalizeRequest(
+  input: RequestInput,
+  requestInit?: RequestInit,
+): Request {
   if (input instanceof Request) {
     if (input.signal && input.signal.aborted) {
       abort();
@@ -458,7 +545,7 @@ function normalizeRequest(input: RequestInput, requestInit?: RequestInit): Reque
 async function buildResponse(
   request: Request,
   responseProvider: ResponseProvider,
-  params?: MockParams
+  params?: MockParams,
 ): Promise<Response> {
   const response = await normalizeResponse(request, responseProvider, params);
 
@@ -472,16 +559,26 @@ async function buildResponse(
 async function normalizeResponse(
   request: Request,
   responseProvider: ResponseProvider,
-  params?: MockParams
+  params?: MockParams,
 ): Promise<Response> {
-  const responseLike = typeof responseProvider === 'function' ? await responseProvider(request) : responseProvider;
+  const responseLike =
+    typeof responseProvider === 'function'
+      ? await responseProvider(request)
+      : responseProvider;
 
   if (responseLike instanceof Response) {
     return responseLike;
-  } else if (typeof responseLike === 'string' || responseLike === null || responseLike === undefined) {
+  } else if (
+    typeof responseLike === 'string' ||
+    responseLike === null ||
+    responseLike === undefined
+  ) {
     return new Response(responseLike, params);
   } else {
-    return patchUrl(new Response(responseLike.body, { ...params, ...responseLike }), responseLike.url ?? params?.url);
+    return patchUrl(
+      new Response(responseLike.body, { ...params, ...responseLike }),
+      responseLike.url ?? params?.url,
+    );
   }
 }
 
@@ -494,11 +591,16 @@ function patchUrl(response: Response, url?: string): Response {
   return response;
 }
 
-function always(toggle: boolean): (input: RequestInput, requestInit?: RequestInit) => boolean {
+function always(
+  toggle: boolean,
+): (input: RequestInput, requestInit?: RequestInit) => boolean {
   return () => toggle;
 }
 
-const normalizeError = async (request: Request, errorOrFunction?: ErrorOrFunction): Promise<Response> =>
+const normalizeError = async (
+  request: Request,
+  errorOrFunction?: ErrorOrFunction,
+): Promise<Response> =>
   errorOrFunction instanceof Error
     ? Promise.reject(errorOrFunction)
     : typeof errorOrFunction === 'function'
@@ -518,10 +620,15 @@ function abortAsync(): Promise<never> {
 }
 
 function copyMethods<T>(source: T, target: T) {
-  Object.getOwnPropertyNames(FetchMockObject.prototype).forEach((propertyName) => {
-    const propertyFromSource = source[propertyName as keyof T];
-    if (propertyName !== 'constructor' && typeof propertyFromSource === 'function') {
-      target[propertyName as keyof T] = propertyFromSource.bind(source);
-    }
-  });
+  Object.getOwnPropertyNames(FetchMockObject.prototype).forEach(
+    (propertyName) => {
+      const propertyFromSource = source[propertyName as keyof T];
+      if (
+        propertyName !== 'constructor' &&
+        typeof propertyFromSource === 'function'
+      ) {
+        target[propertyName as keyof T] = propertyFromSource.bind(source);
+      }
+    },
+  );
 }

@@ -1,7 +1,7 @@
 /**
  * @jest-environment node
  */
-import { it, expect, rs } from '@rstest/core';
+import { it, expect, rs } from 'rstack/test';
 import createFetchMock from '../src/index.js';
 
 it('rejects with a dom exception', () => {

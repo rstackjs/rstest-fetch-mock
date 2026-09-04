@@ -44,6 +44,17 @@ export default defineConfig({
 });
 ```
 
+For [Rstack CLI](https://rstack.rs/), register the setup file with `define.test`:
+
+```ts
+// rstack.config.ts
+import { define } from 'rstack';
+
+define.test({
+  setupFiles: ['./rstest.setup.ts'],
+});
+```
+
 > Unlike `vitest-fetch-mock`, you do **not** need to pass the mocking API to
 > `createFetchMock` — it defaults to Rstest's `rs`. If you prefer to be explicit,
 > `createFetchMock(rs)` still works (import `rs` from `@rstest/core`).
@@ -97,11 +108,11 @@ Reset the fetch mock with its own **`fetchMock.resetMocks()`** (typically in
 global mock lifecycle — `fetchMock` is created with `rs.fn`, so Rstest's
 project-wide reset/restore also touch it:
 
-| Trigger                                            | Effect on the fetch mock                                                              |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `rs.clearAllMocks()` / config `clearMocks: true`   | Clears recorded calls only. Queued responses **survive**; `fetch` stays mocked.       |
-| `rs.resetAllMocks()` / config `resetMocks: true`   | **Wipes queued responses** and installed implementations; `fetch` stays mocked.       |
-| `rs.restoreAllMocks()` / config `restoreMocks: true` | Wipes queued responses; `fetch` **stays mocked** (it is _not_ restored to native).  |
+| Trigger                                              | Effect on the fetch mock                                                           |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `rs.clearAllMocks()` / config `clearMocks: true`     | Clears recorded calls only. Queued responses **survive**; `fetch` stays mocked.    |
+| `rs.resetAllMocks()` / config `resetMocks: true`     | **Wipes queued responses** and installed implementations; `fetch` stays mocked.    |
+| `rs.restoreAllMocks()` / config `restoreMocks: true` | Wipes queued responses; `fetch` **stays mocked** (it is _not_ restored to native). |
 
 Two consequences worth remembering:
 
@@ -127,8 +138,7 @@ type ResponseLike = string | null | undefined | Response | MockResponse;
 
 // What a mocked call responds with: a value, or a function deriving one.
 type ResponseProvider =
-  | ResponseLike
-  | ((request: Request) => ResponseLike | Promise<ResponseLike>);
+  ResponseLike | ((request: Request) => ResponseLike | Promise<ResponseLike>);
 
 interface MockParams {
   status?: number;
@@ -277,7 +287,9 @@ builds the rejection per request. `mockRejectOnce` rejects only the next call.
 it('rejects', async () => {
   fetchMock.mockReject(new Error('fake error message'));
 
-  await expect(fetch('https://example.com')).rejects.toThrow('fake error message');
+  await expect(fetch('https://example.com')).rejects.toThrow(
+    'fake error message',
+  );
 });
 ```
 
@@ -290,7 +302,9 @@ it('rejects', async () => {
 it('aborts', async () => {
   fetchMock.mockAbortOnce();
 
-  await expect(fetch('https://example.com')).rejects.toThrow(expect.any(DOMException));
+  await expect(fetch('https://example.com')).rejects.toThrow(
+    expect.any(DOMException),
+  );
 });
 ```
 
@@ -307,7 +321,9 @@ it('serves queued responses in order', async () => {
     .once(JSON.stringify({ name: 'naruto' }));
 
   const token = await fetch('https://example.com/auth').then((r) => r.json());
-  const anime = await fetch('https://example.com/anime/21049').then((r) => r.json());
+  const anime = await fetch('https://example.com/anime/21049').then((r) =>
+    r.json(),
+  );
 
   expect(token).toEqual({ access_token: '12345' });
   expect(anime).toEqual({ name: 'naruto' });
@@ -392,7 +408,9 @@ describe('apiRequest', () => {
     await apiRequest('twitter');
 
     expect(fetchMock).toHaveBeenCalled();
-    expect(fetchMock.requests().map((r) => r.url)).toContain('https://twitter.com/');
+    expect(fetchMock.requests().map((r) => r.url)).toContain(
+      'https://twitter.com/',
+    );
   });
 });
 ```
@@ -406,7 +424,8 @@ delay.
 ```ts
 it('resolves after a delay', async () => {
   fetchMock.mockResponseOnce(
-    () => new Promise((resolve) => setTimeout(() => resolve({ body: 'ok' }), 100)),
+    () =>
+      new Promise((resolve) => setTimeout(() => resolve({ body: 'ok' }), 100)),
   );
 
   const res = await fetch('https://example.com').then((r) => r.text());
@@ -444,7 +463,9 @@ it('only mocks the matching endpoint', async () => {
   // Mock the health check; everything else falls through to the real fetch.
   fetchMock.doMockIf('https://api.example.com/health', 'ok');
 
-  const health = await fetch('https://api.example.com/health').then((r) => r.text());
+  const health = await fetch('https://api.example.com/health').then((r) =>
+    r.text(),
+  );
   expect(health).toEqual('ok');
 });
 
