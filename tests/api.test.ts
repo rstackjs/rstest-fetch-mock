@@ -1,6 +1,19 @@
-import { describe, beforeEach, it, test, expect, rs, afterEach, beforeAll, afterAll } from '@rstest/core';
+import {
+  describe,
+  beforeEach,
+  it,
+  test,
+  expect,
+  rs,
+  afterEach,
+  beforeAll,
+  afterAll,
+} from 'rstack/test';
 import { APIRequest, APIRequest2, defaultRequestUri, request } from './api.js';
-import createFetchMock, { type FetchMock, type MockResponse } from '../src/index.js';
+import createFetchMock, {
+  type FetchMock,
+  type MockResponse,
+} from '../src/index.js';
 
 describe('testing mockResponse', () => {
   const fetch = createFetchMock(rs);
@@ -18,7 +31,9 @@ describe('testing mockResponse', () => {
   });
 
   it('mocks a response', async () => {
-    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), { status: 200 });
+    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), {
+      status: 200,
+    });
 
     const response = await APIRequest('google');
 
@@ -31,21 +46,32 @@ describe('testing mockResponse', () => {
 
   it('mocks a response with chaining', async () => {
     fetch
-      .mockResponseOnce(JSON.stringify({ secret_data: '12345' }), { status: 200 })
-      .mockResponseOnce(JSON.stringify({ secret_data: '67891' }), { status: 200 });
+      .mockResponseOnce(JSON.stringify({ secret_data: '12345' }), {
+        status: 200,
+      })
+      .mockResponseOnce(JSON.stringify({ secret_data: '67891' }), {
+        status: 200,
+      });
 
     const response = await APIRequest('facebook');
 
-    expect(response).toEqual([{ secret_data: '12345' }, { secret_data: '67891' }]);
+    expect(response).toEqual([
+      { secret_data: '12345' },
+      { secret_data: '67891' },
+    ]);
 
     expect(fetch.mock.calls.length).toEqual(2);
 
-    expect(fetch.mock.calls[0]![0]).toEqual('https://facebook.com/someOtherResource');
+    expect(fetch.mock.calls[0]![0]).toEqual(
+      'https://facebook.com/someOtherResource',
+    );
     expect(fetch.mock.calls[1]![0]).toEqual('https://facebook.com');
   });
 
   it('mocks a response with alias .once', async () => {
-    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), { status: 200 });
+    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), {
+      status: 200,
+    });
 
     const response = await APIRequest('google');
 
@@ -61,17 +87,26 @@ describe('testing mockResponse', () => {
 
     const response = await APIRequest('facebook');
 
-    expect(response).toEqual([{ secret_data: '12345' }, { secret_data: '67891' }]);
+    expect(response).toEqual([
+      { secret_data: '12345' },
+      { secret_data: '67891' },
+    ]);
 
     expect(fetch.mock.calls.length).toEqual(2);
 
-    expect(fetch.mock.calls[0]![0]).toEqual('https://facebook.com/someOtherResource');
-    expect(fetch.requests()[0]!.url).toEqual('https://facebook.com/someOtherResource');
+    expect(fetch.mock.calls[0]![0]).toEqual(
+      'https://facebook.com/someOtherResource',
+    );
+    expect(fetch.requests()[0]!.url).toEqual(
+      'https://facebook.com/someOtherResource',
+    );
     expect(fetch.mock.calls[1]![0]).toEqual('https://facebook.com');
   });
 
   it('supports URLs', async () => {
-    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), { status: 200 });
+    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), {
+      status: 200,
+    });
 
     const response = await APIRequest('instagram');
 
@@ -81,7 +116,9 @@ describe('testing mockResponse', () => {
   });
 
   it('returns normalized requests', async () => {
-    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), { status: 200 });
+    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), {
+      status: 200,
+    });
 
     const response = await APIRequest('instagram');
 
@@ -91,7 +128,9 @@ describe('testing mockResponse', () => {
   });
 
   it('supports an object with a stringifier', async () => {
-    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), { status: 200 });
+    fetch.mockResponseOnce(JSON.stringify({ secret_data: 'abcde' }), {
+      status: 200,
+    });
 
     const response = await APIRequest('instagram');
 
@@ -122,8 +161,12 @@ describe('testing mockResponse', () => {
     fetch.mockResponseOnce(new Response(undefined, { status: 204 }));
     fetch.mockResponseOnce(() => new Response(null, { status: 204 }));
     fetch.mockResponseOnce(() => new Response(undefined, { status: 204 }));
-    fetch.mockResponseOnce(() => Promise.resolve(new Response(null, { status: 204 })));
-    fetch.mockResponseOnce(() => Promise.resolve(new Response(undefined, { status: 204 })));
+    fetch.mockResponseOnce(() =>
+      Promise.resolve(new Response(null, { status: 204 })),
+    );
+    fetch.mockResponseOnce(() =>
+      Promise.resolve(new Response(undefined, { status: 204 })),
+    );
     fetch.mockResponseOnce('done');
 
     expect(await request()).toBe('');
@@ -163,7 +206,7 @@ describe('testing mockResponses', () => {
   it('mocks multiple responses', async () => {
     fetch.mockResponses(
       [JSON.stringify({ name: 'naruto', average_score: 79 })],
-      [JSON.stringify({ name: 'bleach', average_score: 68 })]
+      [JSON.stringify({ name: 'bleach', average_score: 68 })],
     );
 
     const response = await APIRequest('facebook');
@@ -173,7 +216,9 @@ describe('testing mockResponses', () => {
     ]);
     expect(fetch.mock.calls.length).toEqual(2);
 
-    expect(fetch.mock.calls[0]![0]).toEqual('https://facebook.com/someOtherResource');
+    expect(fetch.mock.calls[0]![0]).toEqual(
+      'https://facebook.com/someOtherResource',
+    );
     expect(fetch.mock.calls[1]![0]).toEqual('https://facebook.com');
   });
 });
@@ -213,7 +258,9 @@ describe('Mocking aborts', () => {
   it('throws when passed an already aborted abort signal in the request init', () => {
     const c = new AbortController();
     c.abort();
-    expect(() => fetch('/', { signal: c.signal })).toThrow(expect.any(DOMException));
+    expect(() => fetch('/', { signal: c.signal })).toThrow(
+      expect.any(DOMException),
+    );
   });
 
   it('rejects when aborted before resolved', async () => {
@@ -223,7 +270,9 @@ describe('Mocking aborts', () => {
       return '';
     });
     setTimeout(() => c.abort(), 50);
-    await expect(fetch('http://foo.bar/', { signal: c.signal })).rejects.toThrow(expect.any(DOMException));
+    await expect(
+      fetch('http://foo.bar/', { signal: c.signal }),
+    ).rejects.toThrow(expect.any(DOMException));
   });
 });
 
@@ -331,7 +380,8 @@ describe('request', () => {
 
   it('rejects with error data', async () => {
     const errorData = {
-      error: 'Uh oh, something has gone wrong. Please tweet us @randomapi about the issue. Thank you.',
+      error:
+        'Uh oh, something has gone wrong. Please tweet us @randomapi about the issue. Thank you.',
     };
     fetch.mockRejectOnce(JSON.stringify(errorData));
 
@@ -350,7 +400,12 @@ describe('request', () => {
 
   it('resolves with function and timeout', async () => {
     rs.useFakeTimers();
-    fetch.mockResponseOnce(() => new Promise((resolve) => setTimeout(() => resolve({ body: 'ok' }), 5000)));
+    fetch.mockResponseOnce(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ body: 'ok' }), 5000),
+        ),
+    );
     try {
       const req = request();
       rs.runAllTimers();
@@ -362,7 +417,8 @@ describe('request', () => {
 
   it('rejects with function', async () => {
     const errorData = {
-      error: 'Uh oh, something has gone wrong. Please tweet us @randomapi about the issue. Thank you.',
+      error:
+        'Uh oh, something has gone wrong. Please tweet us @randomapi about the issue. Thank you.',
     };
     fetch.mockRejectOnce(() => Promise.reject(JSON.stringify(errorData)));
     return expect(request()).rejects.toThrow(errorData.error);
@@ -370,16 +426,29 @@ describe('request', () => {
 
   it('rejects with function and timeout', async () => {
     const errorData = {
-      error: 'Uh oh, something has gone wrong. Please tweet us @randomapi about the issue. Thank you.',
+      error:
+        'Uh oh, something has gone wrong. Please tweet us @randomapi about the issue. Thank you.',
     };
-    fetch.mockRejectOnce(() => new Promise((_, reject) => setTimeout(() => reject(JSON.stringify(errorData)), 100)));
+    fetch.mockRejectOnce(
+      () =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(JSON.stringify(errorData)), 100),
+        ),
+    );
     expect(request()).rejects.toThrowError(errorData.error);
   });
 
   it('resolves with function returning object body and init headers', async () => {
-    fetch.mockResponseOnce(() => Promise.resolve<MockResponse>({ body: 'ok', headers: { ding: 'dang' } }), {
-      headers: { bash: 'bang' },
-    });
+    fetch.mockResponseOnce(
+      () =>
+        Promise.resolve<MockResponse>({
+          body: 'ok',
+          headers: { ding: 'dang' },
+        }),
+      {
+        headers: { bash: 'bang' },
+      },
+    );
 
     const response = await fetch('https://test.url', {});
     expect(response.headers.get('ding')).toEqual('dang');
@@ -396,7 +465,7 @@ describe('request', () => {
         statusText: 'text',
         url: 'http://foo',
       }),
-      { headers: { bash: 'bang' } }
+      { headers: { bash: 'bang' } },
     );
 
     const response = await fetch('https://bar', {});
@@ -412,7 +481,9 @@ describe('request', () => {
     fetch.mockResponseOnce(() => Promise.resolve('ok'), {
       headers: { ding: 'dang' },
     });
-    return expect(fetch('https://bar', {}).then((response) => response.headers.get('ding'))).resolves.toEqual('dang');
+    return expect(
+      fetch('https://bar', {}).then((response) => response.headers.get('ding')),
+    ).resolves.toEqual('dang');
   });
 });
 
@@ -426,7 +497,9 @@ describe('conditional mocking', () => {
 
   beforeEach(async () => {
     originalFetch = globalThis.fetch;
-    globalThis.fetch = rs.fn(async () => Promise.resolve(new Response(realResponse)));
+    globalThis.fetch = rs.fn(async () =>
+      Promise.resolve(new Response(realResponse)),
+    );
     fetch = createFetchMock(rs);
 
     await expectUnmocked();
@@ -442,7 +515,10 @@ describe('conditional mocking', () => {
     globalThis.fetch = originalFetch;
   });
 
-  const expectMocked = async (uri?: string, response = mockedDefaultResponse) => {
+  const expectMocked = async (
+    uri?: string,
+    response = mockedDefaultResponse,
+  ) => {
     return expect(request(uri)).resolves.toEqual(response);
   };
   const expectUnmocked = async (uri?: string) => {
@@ -521,7 +597,9 @@ describe('conditional mocking', () => {
     it('mocks when matches string', async () => {
       const response = 'blah';
       const response2 = 'blah2';
-      fetch.doMockOnceIf('http://foo/', response).doMockOnceIf('http://foo2/', response2);
+      fetch
+        .doMockOnceIf('http://foo/', response)
+        .doMockOnceIf('http://foo2/', response2);
       await expectMocked('http://foo/', response);
       await expectMocked('http://foo2/', response2);
       await expectMocked('http://foo3', mockedDefaultResponse);
@@ -646,11 +724,15 @@ describe('conditional mocking', () => {
         // .mockResponse(mockedDefaultResponse) // set above - here for clarity
         .mockResponseOnce('1') // 1
         .mockResponseOnce('2') // 2
-        .mockResponseOnce(async (request) => (request.url === alternativeUrl ? alternativeBody : '3')) // 3
+        .mockResponseOnce(async (request) =>
+          request.url === alternativeUrl ? alternativeBody : '3',
+        ) // 3
         .mockResponseOnce('4') // 4
         .mockResponseOnce('5') // 5
         .mockResponseOnce(async (request) =>
-          request.url === alternativeUrl ? alternativeBody : mockedDefaultResponse
+          request.url === alternativeUrl
+            ? alternativeBody
+            : mockedDefaultResponse,
         ); // 6
     });
 
@@ -691,7 +773,12 @@ describe('conditional mocking', () => {
 
     describe('dontMock', () => {
       beforeEach(() => {
-        fetch.dontMock().dontMockOnceIf(alternativeUrl).doMockOnceIf(alternativeUrl).doMockOnce().dontMockOnce();
+        fetch
+          .dontMock()
+          .dontMockOnceIf(alternativeUrl)
+          .doMockOnceIf(alternativeUrl)
+          .doMockOnce()
+          .dontMockOnce();
       });
 
       test('defaultRequestUri', async () => {
