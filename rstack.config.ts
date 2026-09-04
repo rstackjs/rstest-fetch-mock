@@ -24,8 +24,8 @@ define.test({
 define.fmt({
   singleQuote: true,
   sortPackageJson: true,
-  // Keep the framework-agnostic request helper identical to upstream.
-  ignorePatterns: ['tests/api.ts'],
+  // Preserve upstream formatting for the request helper and parity tests.
+  ignorePatterns: ['tests/api.ts', 'tests/api.test.ts'],
 });
 
 define.staged({
